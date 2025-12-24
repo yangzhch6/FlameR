@@ -1,0 +1,10 @@
+wandb
+**/old
+outputs
+**/__pycache__
+checkpoints
+distill
+data
+rm_server
+logs
+tmp_analysis

@@ -1,0 +1,2 @@
+bash /mnt/weka/home/yongxin.wang/workspace/lark/SvS/scripts/eval/Qwen3-4B-Base-Openr1-Prompt2-Step-Once-SFT-r10k.sh
+bash /mnt/weka/home/yongxin.wang/workspace/lark/SvS/scripts/eval/Qwen3-4B-Base-Openr1-Prompt2-Step-Fold-SFT-r10k.sh
