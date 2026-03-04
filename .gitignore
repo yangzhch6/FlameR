@@ -2,6 +2,12 @@ wandb
 docker
 docs
 checkpoints
-data
+data/think
+data/think-fold
+data/preprocess/think
 outputs
 __pycache__
+scripts/eval
+scripts/infer
+scripts/maxrl
+scripts/train/fold-thought

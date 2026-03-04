@@ -24,6 +24,7 @@ from omegaconf import OmegaConf
 
 from verl.trainer.ppo.ray_trainer import RayPPOTrainer, RaySvSTrainer
 from verl.trainer.ppo.reward import load_reward_manager
+from verl.workers.reward_manager.prime import MathVerifyRewardManager
 
 
 @hydra.main(config_path="config", config_name="ppo_trainer", version_base=None)
@@ -160,6 +161,8 @@ class TaskRunner:
         # Load the reward manager for training and validation.
         reward_fn = load_reward_manager(config, tokenizer, num_examine=0)
         val_reward_fn = load_reward_manager(config, tokenizer, num_examine=1, validation=True)
+        # reward_fn = MathVerifyRewardManager(tokenizer=tokenizer, num_examine=0)
+        # val_reward_fn = MathVerifyRewardManager(tokenizer=tokenizer, num_examine=1)
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
         from verl.utils.dataset.rl_dataset import collate_fn

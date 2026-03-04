@@ -87,6 +87,7 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
         # raise NotImplementedError(f"Reward function is not implemented for {data_source=}")
         from . import prime_math
         res = prime_math.compute_score(solution_str, ground_truth)
+        # res = prime_math.compute_math_verify_score(solution_str, ground_truth)
 
     if isinstance(res, dict):
         return res

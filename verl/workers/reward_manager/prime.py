@@ -24,6 +24,7 @@ from transformers import PreTrainedTokenizer
 
 from verl import DataProto
 from verl.utils.reward_score import default_compute_score
+from verl.utils.reward_score.prime_math import compute_math_verify_score
 from verl.workers.reward_manager import register
 
 
@@ -230,6 +231,98 @@ class PrimeRewardManager:
         #     return {"reward_tensor": reward_tensor}
         # else:
         #     return reward_tensor
+
+        for i in range(len(data)):
+            data_source = data_sources[i]
+            reward_tensor[i, valid_response_length[i].item() - 1] = scores[i]
+
+            if data_source not in already_print_data_sources:
+                already_print_data_sources[data_source] = 0
+
+            if already_print_data_sources[data_source] < self.num_examine:
+                already_print_data_sources[data_source] += 1
+                print(f"<<<<<<<<<<  Prompt-{i}  >>>>>>>>>>:\n{prompt_str[i]}")
+                print(f"<<<<<<<<<< Response-{i} >>>>>>>>>>:\n{sequences_str[i]}")
+                print(f"<<<<<<<<<< Evaluate-{i} >>>>>>>>>>:\nGT: {ground_truth[i]} | Verifier: {scores[i]} | Data Source: {data_source}")
+
+        if return_dict:
+            return scores, {"reward_tensor": reward_tensor}
+        else:
+            return scores, reward_tensor
+
+
+class MathVerifyRewardManager:
+    """
+    The Reward Manager used in https://github.com/PRIME-RL/PRIME
+    """
+
+    def __init__(
+        self,
+        tokenizer: PreTrainedTokenizer,
+        num_examine: int,
+    ) -> None:
+        self.tokenizer = tokenizer
+        self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
+        self.compute_score = compute_math_verify_score
+
+
+    def verify(self, data):
+        """
+        verify the batch and save as ``acc`` tensor
+        """
+        # batched scoring
+        prompt_ids = data.batch["prompts"]
+
+        response_ids = data.batch["responses"]
+        sequences_str = self.tokenizer.batch_decode(response_ids, skip_special_tokens=True)
+        ground_truth = [data_item.non_tensor_batch["reward_model"]["ground_truth"] for data_item in data]
+        data_sources = data.non_tensor_batch["data_source"]
+        extra_info = data.non_tensor_batch.get("extra_info", None)
+
+
+        assert len(sequences_str) == len(ground_truth) == len(data_sources)
+        self.compute_score(data_sources[0], sequences_str[0], ground_truth[0], extra_info[0])
+        try:
+            scores = run_reward_scoring(
+                self.compute_score,
+                completions=sequences_str,
+                references=ground_truth,
+                tasks=data_sources,
+                extra_info=extra_info,
+                num_processes=64,
+            )
+        except asyncio.TimeoutError:
+            print("[Timeout] Global reward scoring timed out. Setting all as 0.")
+            scores = [0.0 for _ in range(len(sequences_str))]
+        except Exception as e:
+            print(f"[Error] Unexpected error during scoring. Setting all as 0. {e}")
+            scores = [0.0 for _ in range(len(sequences_str))]
+        data.batch["acc"] = torch.tensor(scores, dtype=torch.float32, device=prompt_ids.device)
+        return scores
+
+    def __call__(self, data: DataProto, return_dict: bool = False):
+        """We will expand this function gradually based on the available datasets"""
+
+        # If there is rm score, we directly return rm score. Otherwise, we compute via rm_score_fn
+        if "rm_scores" in data.batch.keys():
+            return data.batch["rm_scores"]
+
+        reward_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
+
+        already_print_data_sources = {}
+
+        # batched scoring
+        prompt_ids = data.batch["prompts"]
+        prompt_length = prompt_ids.shape[-1]
+        prompt_str = self.tokenizer.batch_decode(prompt_ids, skip_special_tokens=True)
+        ground_truth = [data_item.non_tensor_batch['reward_model']['ground_truth'] for data_item in data]        
+
+        response_ids = data.batch["responses"]
+        valid_response_length = data.batch["attention_mask"][:, prompt_length:].sum(dim=-1)
+        sequences_str = self.tokenizer.batch_decode(response_ids, skip_special_tokens=True)
+        data_sources = data.non_tensor_batch["data_source"]
+
+        scores = self.verify(data)
 
         for i in range(len(data)):
             data_source = data_sources[i]

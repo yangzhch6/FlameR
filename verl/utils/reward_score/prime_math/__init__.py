@@ -414,3 +414,14 @@ def compute_score(model_output: str, ground_truth: str, answer: str = "") -> boo
         return True, format_correctness, extracted_model_output
     
     return False, format_correctness, extracted_model_output
+
+def compute_math_verify_score(data_source, model_output: str, ground_truth: str, extra_info):
+    original_model_output = model_output[-300:]
+    original_ground_truth = ground_truth
+    
+    ## Verifier-3: math_verify
+    is_correct_math_verify = math_verify.compute_score(original_model_output, original_ground_truth)
+    if is_correct_math_verify:
+        return 1.0
+
+    return 0.0

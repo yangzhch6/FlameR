@@ -3,12 +3,12 @@ export WANDB_API_KEY="004ba186f7e1f9bd08fe620ddeaaf98ef356c95f"
 export RAY_BACKEND_LOG_LEVEL=error
 export NUM_GPUS=$(nvidia-smi --list-gpus | wc -l)
 
-## model, file and save path 
+## model, file and save path
 project_name='Baselines'
-experiment_name='Qwen3-1.7B-Base-Openr1MATH46K-think-r4k'
-model_name_or_path=/mnt/weka/home/yongxin.wang/workspace/lark/models/Qwen/Qwen3-1.7B-Base
-train_path=data/think/openr1-math-46k.parquet  # training data path
-test_path=data/think/aime2425_math500_minerva.parquet
+experiment_name='Qwen2.5-Math-7B-Think32k-SFTOpenr1Math46k-RLdapohard-r12k'
+model_name_or_path=/mnt/weka/home/yongxin.wang/workspace/lark/swift-pipeline/ckpt/think/Qwen2.5-Math-7B-32k-think-openr1-46k/v0-20251215-100304/checkpoint-17172
+train_path=data/think/dapo-17k-hard.parquet  # training data path
+test_path=data/think/amc23_aime2425_math500_minerva.parquet
 save_path=checkpoints/${project_name}/${experiment_name} # define the path for saving RL intermediate checkpoints
 
 ## system parameters
@@ -17,7 +17,7 @@ val_before_train=True # set to 1 to launch validation before inference
 use_dynamic_bsz=True
 tensor_model_parallel_size=1 # rollout and training batch size
 use_tqdm=True # whether using tqdm in vLLM generation
-save_freq=100
+save_freq=50
 test_freq=100
 total_training_steps=500
 
@@ -25,14 +25,15 @@ total_training_steps=500
 norm_adv_by_std_in_grpo=False
 total_epochs=30
 train_batch_size=128
+val_batch_size=256
 ppo_mini_batch_size=64
 log_prob_micro_batch_size_per_gpu=2
 kl_coef=0.0
 kl_loss_coef=0.0
 n_samples=8
 temperature=1.0
-max_prompt_length=4096 
-max_response_length=4096
+max_prompt_length=4096
+max_response_length=12288
 ppo_max_token_len_per_gpu=$((max_prompt_length + max_response_length))
 estimator=grpo
 use_kl_loss=$( [ "$(echo "$kl_loss_coef > 0.0" | bc)" -eq 1 ] && echo true || echo false )
@@ -44,6 +45,7 @@ python3 -m verl.trainer.main_ppo \
     data.train_files=${train_path} \
     data.val_files=${test_path} \
     data.train_batch_size=${train_batch_size} \
+    data.val_batch_size=${val_batch_size} \
     data.max_prompt_length=${max_prompt_length} \
     data.max_response_length=${max_response_length} \
     data.filter_overlong_prompts=True \

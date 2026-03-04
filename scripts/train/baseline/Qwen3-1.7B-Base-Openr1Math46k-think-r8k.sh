@@ -4,9 +4,9 @@ export RAY_BACKEND_LOG_LEVEL=error
 export NUM_GPUS=$(nvidia-smi --list-gpus | wc -l)
 
 ## model, file and save path 
-project_name='Folding-Thoughts'
-experiment_name='Qwen3-4B-Base-Prompt2StepOnceori-Openr1Math46k-think-StepOnce-r10k'
-model_name_or_path=/mnt/weka/home/yongxin.wang/workspace/lark/swift-pipeline/ckpt/think-step/Qwen3-4B-Base-Prompt2-Step-Once-ori/v0-20251224-172641/checkpoint-1461
+project_name='Baselines'
+experiment_name='Qwen3-1.7B-Base-Openr1MATH46K-think-r4k-newenv'
+model_name_or_path=/mnt/weka/home/yongxin.wang/workspace/lark/models/Qwen/Qwen3-1.7B-Base
 train_path=data/think/openr1-math-46k.parquet  # training data path
 test_path=data/think/aime2425_math500_minerva.parquet
 save_path=checkpoints/${project_name}/${experiment_name} # define the path for saving RL intermediate checkpoints
@@ -32,7 +32,7 @@ kl_loss_coef=0.0
 n_samples=8
 temperature=1.0
 max_prompt_length=4096 
-max_response_length=10240
+max_response_length=4096
 ppo_max_token_len_per_gpu=$((max_prompt_length + max_response_length))
 estimator=grpo
 use_kl_loss=$( [ "$(echo "$kl_loss_coef > 0.0" | bc)" -eq 1 ] && echo true || echo false )
