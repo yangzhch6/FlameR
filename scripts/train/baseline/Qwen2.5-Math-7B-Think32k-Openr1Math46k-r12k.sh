@@ -13,7 +13,7 @@ save_path=checkpoints/${project_name}/${experiment_name} # define the path for s
 
 ## system parameters
 use_chat_template=True
-val_before_train=True # set to 1 to launch validation before inference
+val_before_train=False # set to 1 to launch validation before inference
 use_dynamic_bsz=True
 tensor_model_parallel_size=1 # rollout and training batch size
 use_tqdm=True # whether using tqdm in vLLM generation
